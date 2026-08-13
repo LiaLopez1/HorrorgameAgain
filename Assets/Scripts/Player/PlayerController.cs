@@ -16,11 +16,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private float animationDampTime = 0.15f;
 
+    [Header("Head Animation")]
+    [SerializeField] private string headAnimationStateName = "NombreDeTuAnimacion";
+
 
     private CharacterController characterController;
 
     private float verticalVelocity;
     private bool isCrouching;
+
+    public bool IsCrouching => isCrouching; 
+    //esto es una expression-bodied property (propiedad de solo lectura). 
+    // Permite que otros scripts, como CameraController, lean el valor de isCrouching sin poder modificarlo desde afuera
+
+    
 
 
     // Guardamos el ID del parámetro para no buscar
