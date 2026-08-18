@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -19,6 +20,9 @@ public class PlayerController : MonoBehaviour
     [Header("Head Animation")]
     [SerializeField] private string headAnimationStateName = "NombreDeTuAnimacion";
 
+    [Header("References")]
+    [SerializeField] private PlayerInteraction playerInteraction;
+
 
     private CharacterController characterController;
 
@@ -29,13 +33,12 @@ public class PlayerController : MonoBehaviour
     //esto es una expression-bodied property (propiedad de solo lectura). 
     // Permite que otros scripts, como CameraController, lean el valor de isCrouching sin poder modificarlo desde afuera
 
-    
-
-
     // Guardamos el ID del parámetro para no buscar
     // constantemente el string "Speed".
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static  readonly int crouchHash = Animator.StringToHash("IsCrouching");
+
+    
 
 
     private void Awake()
@@ -67,8 +70,18 @@ public class PlayerController : MonoBehaviour
 
     private void HandleMovement()
     {
+        Vector2 input = playerInteraction.State == PlayerInteractionState.Focused 
+        ? Vector2.zero
+        //esto es com decir un else 
+        : moveAction.action.ReadValue<Vector2>();
+
+        //El operador ternario es una forma corta de escribir un if/else 
+    
+        
+    
+
         // Leemos WASD desde el nuevo Input System.
-        Vector2 input = moveAction.action.ReadValue<Vector2>();
+        //Vector2 input = moveAction.action.ReadValue<Vector2>();
 
 
         // Convertimos el Vector2 del input en una dirección tridimensional.

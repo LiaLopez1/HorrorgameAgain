@@ -8,6 +8,9 @@ public class CameraController : MonoBehaviour
     [SerializeField] private CharacterController characterController;
     [SerializeField] private PlayerController playerController;
 
+    [SerializeField] private Transform cameraTransform; // arrastrar el Main Camera real
+    [SerializeField] private PlayerInteraction playerInteraction;
+
     [Header("Input")]
     [SerializeField] private InputActionReference lookAction;
 
@@ -23,13 +26,26 @@ public class CameraController : MonoBehaviour
 
     [Header("Crouch")]
     [SerializeField] private float crouchPivotOffset = 0.5f;
+    [SerializeField] private float crouchPivotzOffset = 0F;
     [SerializeField] private float crouchTransitionSpeed = 8f;
+
+    [Header("Focus")]   
+    [SerializeField] private float focusTransitionSpeed = 6f;
+
+
 
     private float verticalRotation;
     private float bobTimer;
+
     private float standingPivotY;
     private float targetPivotY;
     private float currentPivotY;
+
+    private float standingPivotZ;
+    private float targetPivotZ;
+    private float currentPivotZ;
+
+
     private float currentBobOffset;
 
     private void OnEnable()
@@ -49,10 +65,23 @@ public class CameraController : MonoBehaviour
 
         standingPivotY = cameraPivot.localPosition.y;
         currentPivotY = standingPivotY;
+
+        standingPivotZ = cameraPivot.localPosition.z;
+        currentPivotZ = standingPivotZ;
+
+
     }
 
     private void Update()
     {
+
+        if (playerInteraction.State == PlayerInteractionState.Focused)
+        {
+            HandleFocusedCamera();
+            return;
+        }
+
+        HandleReturnFromFocus();
         HandleLook();
         HandleCrouchHeight();
         HandleHeadBob();
@@ -72,11 +101,15 @@ public class CameraController : MonoBehaviour
 
     private void HandleCrouchHeight()
     {
-        targetPivotY = playerController.IsCrouching
-            ? standingPivotY - crouchPivotOffset
-            : standingPivotY;
-
+        targetPivotY = playerController.IsCrouching ? standingPivotY - crouchPivotOffset: standingPivotY;
         currentPivotY = Mathf.Lerp(currentPivotY, targetPivotY, Time.deltaTime * crouchTransitionSpeed);
+
+        targetPivotZ = playerController.IsCrouching ? standingPivotZ + crouchPivotzOffset : standingPivotZ;
+        currentPivotZ = Mathf.Lerp( currentPivotZ , targetPivotZ, Time.deltaTime * crouchTransitionSpeed);
+
+
+
+
     }
 
     private void HandleHeadBob()
@@ -98,6 +131,25 @@ public class CameraController : MonoBehaviour
 
         currentBobOffset = Mathf.Lerp(currentBobOffset, targetBob, Time.deltaTime * bobSmoothness);
 
-        cameraPivot.localPosition = new Vector3(0f, currentPivotY + currentBobOffset, 0f);
+        cameraPivot.localPosition = new Vector3(0f, currentPivotY + currentBobOffset, currentPivotZ);
+    }
+
+
+    private void HandleFocusedCamera()
+    {
+        Transform target = playerInteraction.CurrentViewPoint;
+
+        cameraTransform.position = Vector3.Lerp(cameraTransform.position, target.position, Time.deltaTime * focusTransitionSpeed);
+        cameraTransform.rotation = Quaternion.Slerp(cameraTransform.rotation, target.rotation, Time.deltaTime * focusTransitionSpeed);
+    }
+
+    private void HandleReturnFromFocus()
+    {
+        // Si la cámara quedó desplazada de su posición local normal (0,0,0) tras un enfoque, la devolvemos suavemente
+        if (cameraTransform.localPosition != Vector3.zero || cameraTransform.localRotation != Quaternion.identity)
+        {
+            cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, Vector3.zero, Time.deltaTime * focusTransitionSpeed);
+            cameraTransform.localRotation = Quaternion.Slerp(cameraTransform.localRotation, Quaternion.identity, Time.deltaTime * focusTransitionSpeed);
+        }
     }
 }

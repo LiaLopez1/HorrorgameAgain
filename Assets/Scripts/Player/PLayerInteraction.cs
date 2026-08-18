@@ -1,6 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+public enum PlayerInteractionState
+{
+    Free,
+    Focused
+}
+
 public class PlayerInteraction : MonoBehaviour
 {
     [Header("References")]
@@ -16,6 +22,8 @@ public class PlayerInteraction : MonoBehaviour
     private Interactable currentInteractable;
     private int interactableLayer;
 
+    public PlayerInteractionState State { get; private set; } = PlayerInteractionState.Free;
+
     private void OnEnable()
     {
         interactAction.action.Enable();
@@ -30,12 +38,28 @@ public class PlayerInteraction : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        if (State == PlayerInteractionState.Focused)
+        //Si estamos enfocando un objeto, no seguimos detectando nuevos objetos ni podemos movernos
+        { 
+            if (interactAction.action.WasPressedThisFrame())
+            {
+                ExitFocusMode();
+            }
+            
+            return;
+        }
+
         DetectInteractable();
 
         if (currentInteractable != null && interactAction.action.WasPressedThisFrame())
         {
-            Debug.Log("Interactuando con: " + currentInteractable);
+            //Debug.Log("Interactuando con: " + currentInteractable);
             currentInteractable.Interact();
+
+            if(currentInteractable is Focusable focusable)
+            {
+                EnterFocusMode(focusable.ViewPoint);
+            }
         }
     }
 
@@ -59,9 +83,21 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
 
+        Debug.DrawRay(ray.origin, ray.direction * interactionDistance, currentInteractable != null? Color.green: Color.red);
+    }
 
-        Debug.DrawRay(ray.origin, ray.direction * interactionDistance, currentInteractable != null? Color.green: Color.red
-        );
+    private Transform currentViewPoint;
+    public Transform CurrentViewPoint => currentViewPoint;
+
+    public void EnterFocusMode(Transform viewPoint)
+    {
+        State = PlayerInteractionState.Focused;
+        currentViewPoint = viewPoint;
+    }
+
+    public void ExitFocusMode()
+    {
+        State = PlayerInteractionState.Free; 
     }
 
     
