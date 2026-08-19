@@ -25,7 +25,7 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private InputActionReference interactAction;
 
     [Header("Interaction")]
-    [SerializeField] private float detectionDistance = 5f; // distancia a la que aparece el ícono simple (lejos)
+    [SerializeField] private float detectionDistance = 8f; // distancia a la que aparece el ícono simple (lejos)
     [SerializeField] private float interactionDistance = 1.5f; // distancia a la que aparece el prompt con la tecla y ya se puede presionar E (cerca)
     [SerializeField] private LayerMask raycastMask;
 
