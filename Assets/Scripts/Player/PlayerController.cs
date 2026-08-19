@@ -17,8 +17,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private float animationDampTime = 0.15f;
 
-    [Header("Head Animation")]
-    [SerializeField] private string headAnimationStateName = "NombreDeTuAnimacion";
+    //[Header("Head Animation")]
+    //[SerializeField] private string headAnimationStateName = "NombreDeTuAnimacion";
 
     [Header("References")]
     [SerializeField] private PlayerInteraction playerInteraction;

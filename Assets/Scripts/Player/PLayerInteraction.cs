@@ -7,6 +7,15 @@ public enum PlayerInteractionState
     Focused
 }
 
+public enum InteractionUIState
+{
+    None,
+    Detected,
+    Interactable
+}
+
+
+
 public class PlayerInteraction : MonoBehaviour
 {
     [Header("References")]
@@ -16,13 +25,21 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private InputActionReference interactAction;
 
     [Header("Interaction")]
-    [SerializeField] private float interactionDistance = 3f;
+    [SerializeField] private float detectionDistance = 5f; // distancia a la que aparece el ícono simple (lejos)
+    [SerializeField] private float interactionDistance = 1.5f; // distancia a la que aparece el prompt con la tecla y ya se puede presionar E (cerca)
     [SerializeField] private LayerMask raycastMask;
 
     private Interactable currentInteractable;
     private int interactableLayer;
 
     public PlayerInteractionState State { get; private set; } = PlayerInteractionState.Free;
+
+    // La UI (InteractionUIController) lee esto cada frame para decidir qué mostrar.
+    public InteractionUIState UIState { get; private set; } = InteractionUIState.None;
+
+    public Transform CurrentUITarget { get; private set; } // el objeto que el ícono/prompt debe seguir en pantalla
+
+  
 
     private void OnEnable()
     {
@@ -53,6 +70,8 @@ public class PlayerInteraction : MonoBehaviour
 
         if (currentInteractable != null && interactAction.action.WasPressedThisFrame())
         {
+            UIState = InteractionUIState.None; // para ocultar la UI
+
             //Debug.Log("Interactuando con: " + currentInteractable);
             currentInteractable.Interact();
 
@@ -67,6 +86,7 @@ public class PlayerInteraction : MonoBehaviour
     private void DetectInteractable()
     { 
         currentInteractable = null;
+        UIState = InteractionUIState.None;
 
 
         Ray ray = playerCamera.ViewportPointToRay( new Vector3(0.5f, 0.5f, 0f));
@@ -74,16 +94,54 @@ public class PlayerInteraction : MonoBehaviour
 
         if (Physics.Raycast(ray,out RaycastHit hit, interactionDistance, raycastMask, QueryTriggerInteraction.Ignore))
         {
+            
             currentInteractable = hit.collider.GetComponentInParent<Interactable>();
             //Unity permite buscar componentes en el objeto impactado o en cualquiera de sus padres mediante GetComponentInParent<T>(), 
             // que es justo lo que nos interesa para objetos compuestos como una puerta.
             if (currentInteractable != null)
             {
+                UIState = InteractionUIState.Interactable;
+                CurrentUITarget = hit.transform;
                 Debug.Log("Detectando objeto interactuable: " + hit.collider.name);
             }
         }
 
+        if (UIState != InteractionUIState.Interactable)
+        {
+            Transform nearest = FindNearestInteractable();
+            if (nearest != null)
+            {
+                UIState = InteractionUIState.Detected;
+                CurrentUITarget = nearest; // <- agregar
+            }
+        }
+
+    
         Debug.DrawRay(ray.origin, ray.direction * interactionDistance, currentInteractable != null? Color.green: Color.red);
+    }
+
+
+    private Transform FindNearestInteractable()
+    {
+        Collider[] hitsNearby = Physics.OverlapSphere(transform.position, detectionDistance, raycastMask, QueryTriggerInteraction.Ignore);
+
+        Transform nearest = null;
+        float nearestDistance = float.MaxValue;
+
+        foreach (Collider col in hitsNearby)
+        {
+            if (col.GetComponentInParent<Interactable>() != null)
+            {
+                float dist = Vector3.Distance(transform.position, col.transform.position);
+                if (dist < nearestDistance)
+                {
+                    nearestDistance = dist;
+                    nearest = col.transform;
+                }
+            }
+        }
+
+        return nearest; // null si no había ninguno
     }
 
     private Transform currentViewPoint;
