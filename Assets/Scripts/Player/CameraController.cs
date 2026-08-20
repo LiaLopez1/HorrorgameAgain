@@ -60,8 +60,6 @@ public class CameraController : MonoBehaviour
 
     private void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
 
         standingPivotY = cameraPivot.localPosition.y;
         currentPivotY = standingPivotY;
@@ -77,9 +75,16 @@ public class CameraController : MonoBehaviour
 
         if (playerInteraction.State == PlayerInteractionState.Focused)
         {
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
             HandleFocusedCamera();
             return;
         }
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+
 
         HandleReturnFromFocus();
         HandleLook();
@@ -92,7 +97,7 @@ public class CameraController : MonoBehaviour
         Vector2 mouseInput = lookAction.action.ReadValue<Vector2>();
 
         float horizontalRotation = mouseInput.x * mouseSensitivity;
-        transform.Rotate(Vector3.up * horizontalRotation);
+        transform.Rotate(Vector3.up * horizontalRotation); //rota el objeto completo por eso esta en el player
 
         verticalRotation -= mouseInput.y * mouseSensitivity;
         verticalRotation = Mathf.Clamp(verticalRotation, minLookAngle, maxLookAngle);
@@ -106,9 +111,6 @@ public class CameraController : MonoBehaviour
 
         targetPivotZ = playerController.IsCrouching ? standingPivotZ + crouchPivotzOffset : standingPivotZ;
         currentPivotZ = Mathf.Lerp( currentPivotZ , targetPivotZ, Time.deltaTime * crouchTransitionSpeed);
-
-
-
 
     }
 

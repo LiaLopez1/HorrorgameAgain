@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections.Generic;
 
 public enum PlayerInteractionState
 {
@@ -38,6 +39,7 @@ public class PlayerInteraction : MonoBehaviour
     public InteractionUIState UIState { get; private set; } = InteractionUIState.None;
 
     public Transform CurrentUITarget { get; private set; } // el objeto que el ícono/prompt debe seguir en pantalla
+    public List<Transform> NearbyInteractables { get; private set; } = new List<Transform>();
 
   
 
@@ -106,14 +108,11 @@ public class PlayerInteraction : MonoBehaviour
             }
         }
 
-        if (UIState != InteractionUIState.Interactable)
+        UpdateNearbyInteractables(); // se llena siempre, haya o no algo apuntado con el raycast
+
+        if (UIState != InteractionUIState.Interactable && NearbyInteractables.Count > 0)
         {
-            Transform nearest = FindNearestInteractable();
-            if (nearest != null)
-            {
-                UIState = InteractionUIState.Detected;
-                CurrentUITarget = nearest; // <- agregar
-            }
+            UIState = InteractionUIState.Detected;
         }
 
     
@@ -121,27 +120,19 @@ public class PlayerInteraction : MonoBehaviour
     }
 
 
-    private Transform FindNearestInteractable()
+    private void UpdateNearbyInteractables()
     {
-        Collider[] hitsNearby = Physics.OverlapSphere(transform.position, detectionDistance, raycastMask, QueryTriggerInteraction.Ignore);
+        NearbyInteractables.Clear(); // vaciamos la lista del frame anterior antes de recalcular
 
-        Transform nearest = null;
-        float nearestDistance = float.MaxValue;
+        Collider[] hitsNearby = Physics.OverlapSphere(transform.position, detectionDistance, raycastMask, QueryTriggerInteraction.Ignore);
 
         foreach (Collider col in hitsNearby)
         {
             if (col.GetComponentInParent<Interactable>() != null)
             {
-                float dist = Vector3.Distance(transform.position, col.transform.position);
-                if (dist < nearestDistance)
-                {
-                    nearestDistance = dist;
-                    nearest = col.transform;
-                }
+                NearbyInteractables.Add(col.transform);
             }
         }
-
-        return nearest; // null si no había ninguno
     }
 
     private Transform currentViewPoint;
@@ -151,6 +142,8 @@ public class PlayerInteraction : MonoBehaviour
     {
         State = PlayerInteractionState.Focused;
         currentViewPoint = viewPoint;
+        UIState = InteractionUIState.None;
+        NearbyInteractables.Clear(); // <- agregar esta línea
     }
 
     public void ExitFocusMode()
